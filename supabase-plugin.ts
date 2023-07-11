@@ -1,12 +1,13 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Plugin } from 'vite'
 
 interface PluginConfig {
   name: string
   version: string
-  supabaseApiKey: string
+  bucketId: string
+  supabase: SupabaseClient
 }
 
 export const Supabase = (config: PluginConfig): Plugin => {
@@ -33,21 +34,17 @@ export const Supabase = (config: PluginConfig): Plugin => {
   }
 }
 
+const fileOptions = {
+  contentType: 'text/javascript',
+  upsert: true,
+  cacheControl: '0'
+}
+
 async function uploadFilesToSupabase(
   config: PluginConfig,
   outDir: string
 ): Promise<void> {
   const __dirname = path.dirname(new URL(import.meta.url).pathname)
-  const bucketId = 'registry'
-  const supabase = createClient(
-    'https://gtsodtluyfgsyrsxtdgi.supabase.co',
-    config.supabaseApiKey,
-    {
-      auth: {
-        persistSession: false
-      }
-    }
-  )
 
   const files = await fs.readdir(path.join(__dirname, outDir), {
     encoding: 'utf-8',
@@ -60,7 +57,7 @@ async function uploadFilesToSupabase(
       continue
     }
 
-    const dirPath = path.join(config.name, config.version)
+    const versionPathDir = path.join(config.name, config.version)
     const fileBody = await fs.readFile(
       path.join(__dirname, outDir, file.name),
       {
@@ -68,19 +65,32 @@ async function uploadFilesToSupabase(
       }
     )
 
-    const { error } = await supabase.storage
-      .from(bucketId)
-      .upload(path.join(dirPath, file.name), fileBody, {
-        contentType: 'text/javascript',
-        upsert: true
-      })
+    // registry/<name>/<version>/<name>.user.js
+    const { error } = await config.supabase.storage
+      .from(config.bucketId)
+      .upload(path.join(versionPathDir, file.name), fileBody, fileOptions)
 
     if (error) {
       console.log(error)
     } else {
-      const publicUrl = supabase.storage
-        .from(bucketId)
-        .getPublicUrl(path.join(dirPath, file.name))
+      const publicUrl = config.supabase.storage
+        .from(config.bucketId)
+        .getPublicUrl(path.join(versionPathDir, file.name))
+
+      console.log(publicUrl.data.publicUrl)
+    }
+
+    // registry/<name>/<name>.user.js
+    const { error: error2 } = await config.supabase.storage
+      .from(config.bucketId)
+      .upload(path.join(config.name, file.name), fileBody, fileOptions)
+
+    if (error2) {
+      console.log(error2)
+    } else {
+      const publicUrl = config.supabase.storage
+        .from(config.bucketId)
+        .getPublicUrl(path.join(config.name, file.name))
 
       console.log(publicUrl.data.publicUrl)
     }

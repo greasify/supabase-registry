@@ -1,7 +1,6 @@
 {
-  "name": "publish-to-registry",
+  "name": "supabase-registry",
   "private": true,
-  "homepage": "https://crashmax-dev.github.io/publish-to-registry/",
   "version": "0.0.0",
   "type": "module",
   "author": "crashmax <userscript@crashmax.ru>",
