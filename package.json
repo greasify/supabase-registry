@@ -1,7 +1,7 @@
 {
   "name": "supabase-registry",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "author": "crashmax <userscript@crashmax.ru>",
   "license": "MIT",

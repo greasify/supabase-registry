@@ -29,6 +29,9 @@ export default defineConfig((config) => {
     .getPublicUrl(path.join(name, `${name}.user.js`))
 
   return {
+    define: {
+      __VERSION__: JSON.stringify(version)
+    },
     plugins: [
       Userscript({
         fileName: name,
